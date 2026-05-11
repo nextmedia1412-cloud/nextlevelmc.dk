@@ -367,9 +367,9 @@ h1 {
 .reveal {
   opacity: 0;
   transition:
-    opacity 420ms ease,
-    transform 420ms cubic-bezier(.2,.9,.2,1),
-    filter 420ms ease;
+    opacity 220ms ease,
+    transform 220ms cubic-bezier(.2,.9,.2,1),
+    filter 220ms ease;
   will-change: opacity, transform;
 }
 
