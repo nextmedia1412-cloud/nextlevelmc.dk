@@ -114,7 +114,7 @@ body::before {
 }
 
 .intro {
-  margin-top: -22px;
+  margin-top: 22px;
 }
 
 .kicker {
@@ -444,7 +444,7 @@ h1 {
   }
 
   .intro {
-    margin-top: -34px;
+    margin-top: 18px;
   }
 
   .subline {
