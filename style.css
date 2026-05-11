@@ -101,34 +101,6 @@ body::before {
   margin-top: 8px;
 }
 
-.logo-halo {
-  position: absolute;
-  width: 82%;
-  height: 82%;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle, rgba(255,133,0,0.20), transparent 60%),
-    radial-gradient(circle, rgba(255,255,255,0.08), transparent 38%);
-  filter: blur(10px);
-  animation: pulseGlow 5.5s ease-in-out infinite;
-}
-
-.logo-stage::before,
-.logo-stage::after {
-  content: "";
-  position: absolute;
-  width: 88%;
-  height: 88%;
-  border: 1px solid rgba(255,133,0,0.18);
-  border-radius: 999px;
-  box-shadow: 0 0 50px rgba(255,133,0,0.08);
-}
-
-.logo-stage::after {
-  width: 74%;
-  height: 74%;
-  border-color: rgba(255,255,255,0.08);
-}
 
 .main-logo {
   position: relative;
