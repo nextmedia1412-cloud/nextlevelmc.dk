@@ -103,11 +103,12 @@
             <div class="panel-header">
               <div>
                 <span class="eyebrow">Opgaver</span>
-                <h2>Tilføj opgave</h2>
+                <h2>Tilføj / redigér opgave</h2>
               </div>
             </div>
 
             <form id="addTaskForm" class="form-grid">
+              <input id="editTaskId" type="hidden" />
               <label>
                 Titel
                 <input id="taskTitle" type="text" placeholder="fx Rengøring af klubhus" required />
@@ -128,7 +129,10 @@
                 <input id="taskActive" type="checkbox" checked />
                 Aktiv opgave
               </label>
-              <button class="btn full" type="submit">Tilføj opgave</button>
+              <div class="form-actions">
+                <button id="taskSubmitBtn" class="btn full" type="submit">Tilføj opgave</button>
+                <button id="cancelEditTaskBtn" class="btn secondary hidden" type="button">Annuller redigering</button>
+              </div>
               <p id="addTaskStatus" class="status-line"></p>
             </form>
           </section>

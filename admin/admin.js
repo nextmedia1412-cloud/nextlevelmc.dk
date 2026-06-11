@@ -29,10 +29,13 @@ const els = {
   addUserStatus: document.querySelector("#addUserStatus"),
 
   addTaskForm: document.querySelector("#addTaskForm"),
+  editTaskId: document.querySelector("#editTaskId"),
   taskTitle: document.querySelector("#taskTitle"),
   taskDescription: document.querySelector("#taskDescription"),
   taskWeight: document.querySelector("#taskWeight"),
   taskActive: document.querySelector("#taskActive"),
+  taskSubmitBtn: document.querySelector("#taskSubmitBtn"),
+  cancelEditTaskBtn: document.querySelector("#cancelEditTaskBtn"),
   addTaskStatus: document.querySelector("#addTaskStatus"),
 
   refreshUsersBtn: document.querySelector("#refreshUsersBtn"),
@@ -51,6 +54,7 @@ const els = {
 };
 
 let currentAdminId = null;
+let cachedTasks = [];
 
 function getCurrentMonthKey() {
   const now = new Date();
@@ -209,6 +213,29 @@ async function deleteUser(userId, username) {
   await loadUsers();
 }
 
+function resetTaskFormMode() {
+  els.editTaskId.value = "";
+  els.addTaskForm.reset();
+  els.taskActive.checked = true;
+  els.taskSubmitBtn.textContent = "Tilføj opgave";
+  els.cancelEditTaskBtn.classList.add("hidden");
+}
+
+function getTaskPayload() {
+  return {
+    title: els.taskTitle.value.trim(),
+    description: els.taskDescription.value.trim() || null,
+    weight: Number(els.taskWeight.value),
+    active: els.taskActive.checked,
+  };
+}
+
+function activeBadge(active) {
+  return active
+    ? `<span class="badge ok">Ja</span>`
+    : `<span class="badge danger">Nej</span>`;
+}
+
 async function loadTasks() {
   setStatus(els.tasksStatus, "Henter opgaver...");
   els.tasksTable.innerHTML = "";
@@ -223,21 +250,139 @@ async function loadTasks() {
     return;
   }
 
-  els.tasksTable.innerHTML = (data || [])
-    .map(
-      (task) => `
+  cachedTasks = data || [];
+
+  els.tasksTable.innerHTML = cachedTasks
+    .map((task) => {
+      const isActive = Boolean(task.active);
+      return `
         <tr>
           <td>${escapeHtml(task.title)}</td>
           <td>${escapeHtml(task.description || "-")}</td>
           <td>${Number(task.weight || 1)}</td>
-          <td>${task.active ? "Ja" : "Nej"}</td>
+          <td>${activeBadge(isActive)}</td>
           <td>${formatDate(task.created_at)}</td>
+          <td>
+            <div class="table-actions">
+              <button
+                class="btn secondary mini edit-task-btn"
+                type="button"
+                data-task-id="${escapeHtml(task.id)}"
+              >
+                Rediger
+              </button>
+              <button
+                class="btn ${isActive ? "danger" : "secondary"} mini toggle-task-btn"
+                type="button"
+                data-task-id="${escapeHtml(task.id)}"
+                data-next-active="${isActive ? "false" : "true"}"
+              >
+                ${isActive ? "Slet" : "Gendan"}
+              </button>
+            </div>
+          </td>
         </tr>
-      `,
-    )
+      `;
+    })
     .join("");
 
-  setStatus(els.tasksStatus, data?.length ? "" : "Ingen opgaver fundet.");
+  els.tasksTable.querySelectorAll(".edit-task-btn").forEach((button) => {
+    button.addEventListener("click", () => startEditTask(button.dataset.taskId));
+  });
+
+  els.tasksTable.querySelectorAll(".toggle-task-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      toggleTaskActive(button.dataset.taskId, button.dataset.nextActive === "true");
+    });
+  });
+
+  setStatus(els.tasksStatus, cachedTasks.length ? "" : "Ingen opgaver fundet.");
+}
+
+function startEditTask(taskId) {
+  const task = cachedTasks.find((item) => item.id === taskId);
+
+  if (!task) {
+    setStatus(els.addTaskStatus, "Opgaven blev ikke fundet. Tryk Opdater og prøv igen.", "error");
+    return;
+  }
+
+  els.editTaskId.value = task.id;
+  els.taskTitle.value = task.title || "";
+  els.taskDescription.value = task.description || "";
+  els.taskWeight.value = String(task.weight || 1);
+  els.taskActive.checked = Boolean(task.active);
+  els.taskSubmitBtn.textContent = "Gem ændringer";
+  els.cancelEditTaskBtn.classList.remove("hidden");
+  setStatus(els.addTaskStatus, `Redigerer: ${task.title}`);
+  els.addTaskForm.scrollIntoView({ behavior: "smooth", block: "center" });
+  els.taskTitle.focus();
+}
+
+async function saveTask() {
+  const taskId = els.editTaskId.value;
+  const payload = getTaskPayload();
+
+  if (!payload.title) {
+    setStatus(els.addTaskStatus, "Titel mangler.", "error");
+    return;
+  }
+
+  if (![1, 2, 3].includes(payload.weight)) {
+    setStatus(els.addTaskStatus, "Vægt skal være 1, 2 eller 3.", "error");
+    return;
+  }
+
+  setStatus(els.addTaskStatus, taskId ? "Gemmer ændringer..." : "Opretter opgave...");
+
+  const request = taskId
+    ? supabase.from("tasks").update(payload).eq("id", taskId)
+    : supabase.from("tasks").insert(payload);
+
+  const { error } = await request;
+
+  if (error) {
+    setStatus(els.addTaskStatus, error.message, "error");
+    return;
+  }
+
+  setStatus(els.addTaskStatus, taskId ? "Opgave opdateret." : "Opgave oprettet.", "success");
+  resetTaskFormMode();
+  await loadTasks();
+  await loadDistribution();
+}
+
+async function toggleTaskActive(taskId, nextActive) {
+  const task = cachedTasks.find((item) => item.id === taskId);
+
+  if (!task) return;
+
+  if (!nextActive) {
+    const confirmed = window.confirm(
+      `Slet opgaven '${task.title}'?\n\nDen bliver deaktiveret, så den ikke kommer med i nye fordelinger. Historiske fordelinger bevares.`
+    );
+
+    if (!confirmed) return;
+  }
+
+  setStatus(els.tasksStatus, nextActive ? "Gendanner opgave..." : "Sletter opgave...");
+
+  const { error } = await supabase
+    .from("tasks")
+    .update({ active: nextActive })
+    .eq("id", taskId);
+
+  if (error) {
+    setStatus(els.tasksStatus, error.message, "error");
+    return;
+  }
+
+  if (els.editTaskId.value === taskId) {
+    resetTaskFormMode();
+  }
+
+  setStatus(els.tasksStatus, nextActive ? "Opgave gendannet." : "Opgave slettet/deaktiveret.", "success");
+  await loadTasks();
 }
 
 function normalizeWeeks(weeks = []) {
@@ -378,24 +523,12 @@ els.addUserForm.addEventListener("submit", async (event) => {
 
 els.addTaskForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  setStatus(els.addTaskStatus, "Opretter opgave...");
+  await saveTask();
+});
 
-  const { error } = await supabase.from("tasks").insert({
-    title: els.taskTitle.value.trim(),
-    description: els.taskDescription.value.trim() || null,
-    weight: Number(els.taskWeight.value),
-    active: els.taskActive.checked,
-  });
-
-  if (error) {
-    setStatus(els.addTaskStatus, error.message, "error");
-    return;
-  }
-
-  setStatus(els.addTaskStatus, "Opgave oprettet.", "success");
-  els.addTaskForm.reset();
-  els.taskActive.checked = true;
-  await loadTasks();
+els.cancelEditTaskBtn.addEventListener("click", () => {
+  resetTaskFormMode();
+  setStatus(els.addTaskStatus, "Redigering annulleret.");
 });
 
 els.distributeBtn.addEventListener("click", async () => {
