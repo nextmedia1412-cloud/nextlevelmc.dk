@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Next Level MC · Opgaver</title>
+    <link rel="stylesheet" href="../shared/ui.css" />
+    <link rel="stylesheet" href="./opgaver.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <span class="eyebrow">Next Level MC</span>
+          <h1>Opgaver</h1>
+        </div>
+        <button id="logoutBtn" class="btn secondary hidden" type="button">Log ud</button>
+      </header>
+
+      <section id="setupWarning" class="panel hidden">
+        <h2>Supabase mangler</h2>
+        <p>Indsæt SUPABASE_URL og SUPABASE_ANON_KEY i <strong>/shared/supabase-client.js</strong>.</p>
+      </section>
+
+      <section id="loginPanel" class="panel login-panel hidden">
+        <div class="panel-header">
+          <div>
+            <span class="eyebrow">Medlemslogin</span>
+            <h2>Log ind</h2>
+          </div>
+        </div>
+
+        <form id="loginForm" class="form-grid">
+          <label>
+            Brugernavn
+            <input id="username" name="username" type="text" autocomplete="username" placeholder="fx stefan" required />
+          </label>
+          <label>
+            Adgangskode
+            <input id="password" name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <button class="btn full" type="submit">Log ind</button>
+          <p id="loginStatus" class="status-line"></p>
+        </form>
+      </section>
+
+      <section id="dashboard" class="grid hidden">
+        <div class="panel hero-panel">
+          <span class="eyebrow">Denne måned</span>
+          <h2>Dine opgaver denne måned</h2>
+          <p id="memberIntro" class="muted small"></p>
+        </div>
+
+        <div id="taskList" class="card-list"></div>
+        <p id="dashboardStatus" class="status-line"></p>
+      </section>
+    </main>
+
+    <script type="module" src="./opgaver.js"></script>
+  </body>
+</html>

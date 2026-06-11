@@ -1,0 +1,48 @@
+.admin-shell {
+  padding-bottom: 4rem;
+}
+
+.login-panel {
+  max-width: 520px;
+  margin: 1rem auto 0;
+}
+
+.admin-hero {
+  border-color: rgba(181, 22, 34, 0.35);
+}
+
+.stackable {
+  align-items: center;
+}
+
+.force-row {
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+#distributionList:empty::before {
+  content: "Ingen fordeling fundet for denne måned.";
+  display: block;
+  border: 1px dashed rgba(197, 123, 54, 0.25);
+  border-radius: 16px;
+  padding: 1rem;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+@media (max-width: 760px) {
+  .panel-header.stackable {
+    display: grid;
+  }
+
+  .panel-header.stackable .actions {
+    width: 100%;
+  }
+
+  .panel-header.stackable .btn,
+  .force-row {
+    width: 100%;
+  }
+}

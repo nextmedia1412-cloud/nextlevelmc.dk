@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Next Level MC · Admin</title>
+    <link rel="stylesheet" href="../shared/ui.css" />
+    <link rel="stylesheet" href="./admin.css" />
+  </head>
+  <body>
+    <main class="page-shell admin-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <span class="eyebrow">Next Level MC</span>
+          <h1>Admin</h1>
+        </div>
+        <button id="logoutBtn" class="btn secondary hidden" type="button">Log ud</button>
+      </header>
+
+      <section id="setupWarning" class="panel hidden">
+        <h2>Supabase mangler</h2>
+        <p>Indsæt SUPABASE_URL og SUPABASE_ANON_KEY i <strong>/shared/supabase-client.js</strong>.</p>
+      </section>
+
+      <section id="loginPanel" class="panel login-panel hidden">
+        <div class="panel-header">
+          <div>
+            <span class="eyebrow">Admin-login</span>
+            <h2>Log ind</h2>
+          </div>
+        </div>
+
+        <form id="loginForm" class="form-grid">
+          <label>
+            Brugernavn
+            <input id="username" type="text" autocomplete="username" placeholder="fx stefan" required />
+          </label>
+          <label>
+            Adgangskode
+            <input id="password" type="password" autocomplete="current-password" required />
+          </label>
+          <button class="btn full" type="submit">Log ind</button>
+          <p id="loginStatus" class="status-line"></p>
+        </form>
+      </section>
+
+      <section id="accessDenied" class="panel hidden">
+        <span class="eyebrow">Adgang nægtet</span>
+        <h2>Du har ikke adgang til admin.</h2>
+        <p>Kontakt en admin, hvis din bruger skal have admin-rolle.</p>
+      </section>
+
+      <section id="adminPanel" class="grid hidden">
+        <div class="panel admin-hero">
+          <span class="eyebrow">Kontrolpanel</span>
+          <h2 id="adminIntro">Klar</h2>
+          <p>Tilføj brugere, opgaver og fordel månedens ansvar.</p>
+        </div>
+
+        <div class="grid-2">
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <span class="eyebrow">Brugere</span>
+                <h2>Tilføj bruger</h2>
+              </div>
+            </div>
+
+            <form id="addUserForm" class="form-grid">
+              <label>
+                Brugernavn
+                <input id="newUsername" type="text" placeholder="fx stefan" required />
+              </label>
+              <label>
+                Visningsnavn
+                <input id="newDisplayName" type="text" placeholder="fx Stefan" required />
+              </label>
+              <label>
+                Adgangskode
+                <input id="newPassword" type="password" minlength="6" required />
+              </label>
+              <label>
+                Rolle
+                <select id="newRole">
+                  <option value="member">member</option>
+                  <option value="admin">admin</option>
+                </select>
+              </label>
+              <label class="checkbox-row">
+                <input id="newActive" type="checkbox" checked />
+                Aktiv bruger
+              </label>
+              <button class="btn full" type="submit">Tilføj bruger</button>
+              <p id="addUserStatus" class="status-line"></p>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <span class="eyebrow">Opgaver</span>
+                <h2>Tilføj opgave</h2>
+              </div>
+            </div>
+
+            <form id="addTaskForm" class="form-grid">
+              <label>
+                Titel
+                <input id="taskTitle" type="text" placeholder="fx Rengøring af klubhus" required />
+              </label>
+              <label>
+                Beskrivelse
+                <textarea id="taskDescription" placeholder="Kort og konkret beskrivelse"></textarea>
+              </label>
+              <label>
+                Vægt
+                <select id="taskWeight">
+                  <option value="1">1 · Let</option>
+                  <option value="2">2 · Medium</option>
+                  <option value="3">3 · Tung</option>
+                </select>
+              </label>
+              <label class="checkbox-row">
+                <input id="taskActive" type="checkbox" checked />
+                Aktiv opgave
+              </label>
+              <button class="btn full" type="submit">Tilføj opgave</button>
+              <p id="addTaskStatus" class="status-line"></p>
+            </form>
+          </section>
+        </div>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">Overblik</span>
+              <h2>Brugere</h2>
+            </div>
+            <button id="refreshUsersBtn" class="btn secondary" type="button">Opdater</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Brugernavn</th>
+                  <th>Navn</th>
+                  <th>Rolle</th>
+                  <th>Aktiv</th>
+                  <th>Oprettet</th>
+                </tr>
+              </thead>
+              <tbody id="usersTable"></tbody>
+            </table>
+          </div>
+          <p id="usersStatus" class="status-line"></p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <span class="eyebrow">Overblik</span>
+              <h2>Opgaver</h2>
+            </div>
+            <button id="refreshTasksBtn" class="btn secondary" type="button">Opdater</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Titel</th>
+                  <th>Beskrivelse</th>
+                  <th>Vægt</th>
+                  <th>Aktiv</th>
+                  <th>Oprettet</th>
+                </tr>
+              </thead>
+              <tbody id="tasksTable"></tbody>
+            </table>
+          </div>
+          <p id="tasksStatus" class="status-line"></p>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header stackable">
+            <div>
+              <span class="eyebrow">Fordeling</span>
+              <h2>Månedens fordeling</h2>
+              <p id="monthLabel" class="small muted"></p>
+            </div>
+            <div class="actions">
+              <label class="checkbox-row force-row">
+                <input id="forceDistribution" type="checkbox" />
+                Overskriv måned
+              </label>
+              <button id="distributeBtn" class="btn gold" type="button">Fordel opgaver</button>
+              <button id="refreshDistributionBtn" class="btn secondary" type="button">Opdater</button>
+            </div>
+          </div>
+          <div id="distributionList" class="card-list"></div>
+          <p id="distributionStatus" class="status-line"></p>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="./admin.js"></script>
+  </body>
+</html>
