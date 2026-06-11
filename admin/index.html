@@ -39,6 +39,10 @@
             Adgangskode
             <input id="password" type="password" autocomplete="current-password" required />
           </label>
+          <label class="checkbox-row remember-row">
+            <input id="rememberLogin" type="checkbox" />
+            Husk mig
+          </label>
           <button class="btn full" type="submit">Log ind</button>
           <p id="loginStatus" class="status-line"></p>
         </form>
@@ -147,6 +151,7 @@
                   <th>Rolle</th>
                   <th>Aktiv</th>
                   <th>Oprettet</th>
+                  <th>Handling</th>
                 </tr>
               </thead>
               <tbody id="usersTable"></tbody>
@@ -172,6 +177,7 @@
                   <th>Vægt</th>
                   <th>Aktiv</th>
                   <th>Oprettet</th>
+                  <th>Handling</th>
                 </tr>
               </thead>
               <tbody id="tasksTable"></tbody>

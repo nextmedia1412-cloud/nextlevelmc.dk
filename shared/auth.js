@@ -1,6 +1,7 @@
 import { supabase } from "./supabase-client.js";
 
 const AUTH_DOMAIN = "nextlevelmc.local";
+const REMEMBER_USERNAME_KEY = "nextlevelmc_remember_username";
 
 export function normalizeUsername(username) {
   return String(username || "")
@@ -13,6 +14,38 @@ export function usernameToEmail(username) {
   const cleanUsername = normalizeUsername(username);
   if (!cleanUsername) throw new Error("Brugernavn mangler.");
   return `${cleanUsername}@${AUTH_DOMAIN}`;
+}
+
+export function getRememberedUsername() {
+  return localStorage.getItem(REMEMBER_USERNAME_KEY) || "";
+}
+
+export function setRememberedUsername(username) {
+  const cleanUsername = normalizeUsername(username);
+  if (!cleanUsername) return;
+  localStorage.setItem(REMEMBER_USERNAME_KEY, cleanUsername);
+}
+
+export function clearRememberedUsername() {
+  localStorage.removeItem(REMEMBER_USERNAME_KEY);
+}
+
+export function hydrateRememberedLogin(usernameInput, rememberCheckbox) {
+  if (!usernameInput || !rememberCheckbox) return;
+
+  const rememberedUsername = getRememberedUsername();
+  if (!rememberedUsername) return;
+
+  usernameInput.value = rememberedUsername;
+  rememberCheckbox.checked = true;
+}
+
+export function handleRememberLogin(username, shouldRemember) {
+  if (shouldRemember) {
+    setRememberedUsername(username);
+  } else {
+    clearRememberedUsername();
+  }
 }
 
 export async function loginWithUsername(username, password) {
@@ -43,7 +76,7 @@ export async function getMyProfile() {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, username, display_name, role, active, created_at")
+    .select("id, username, display_name, role, active, created_at, deleted_at")
     .eq("id", user.id)
     .single();
 
@@ -56,7 +89,7 @@ export async function requireLogin() {
   if (!user) return null;
 
   const profile = await getMyProfile();
-  if (!profile || profile.active !== true) {
+  if (!profile || profile.active !== true || profile.deleted_at) {
     await logout();
     return null;
   }

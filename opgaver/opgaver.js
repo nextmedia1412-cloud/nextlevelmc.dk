@@ -1,5 +1,11 @@
 import { supabase, isSupabaseConfigured } from "../shared/supabase-client.js";
-import { loginWithUsername, logout, requireLogin } from "../shared/auth.js";
+import {
+  loginWithUsername,
+  logout,
+  requireLogin,
+  hydrateRememberedLogin,
+  handleRememberLogin,
+} from "../shared/auth.js";
 
 const els = {
   setupWarning: document.querySelector("#setupWarning"),
@@ -7,6 +13,7 @@ const els = {
   loginForm: document.querySelector("#loginForm"),
   username: document.querySelector("#username"),
   password: document.querySelector("#password"),
+  rememberLogin: document.querySelector("#rememberLogin"),
   loginStatus: document.querySelector("#loginStatus"),
   dashboard: document.querySelector("#dashboard"),
   memberIntro: document.querySelector("#memberIntro"),
@@ -44,9 +51,70 @@ function taskDescription(description) {
   return text || "Ingen beskrivelse.";
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function formatDateTime(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleString("da-DK", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function normalizeWeeks(weeks = []) {
+  const byNumber = new Map((weeks || []).map((week) => [Number(week.week_number), week]));
+
+  return [1, 2, 3, 4].map((weekNumber) => {
+    return byNumber.get(weekNumber) || {
+      id: null,
+      week_number: weekNumber,
+      status: "pending",
+      completed_at: null,
+    };
+  });
+}
+
+function allWeeksDone(weeks) {
+  return normalizeWeeks(weeks).every((week) => week.status === "done");
+}
+
+function renderWeekButton(week) {
+  const isDone = week.status === "done";
+  const doneText = week.completed_at ? ` · ${formatDateTime(week.completed_at)}` : "";
+
+  if (isDone) {
+    return `
+      <div class="week-row done">
+        <span class="week-label">Uge ${week.week_number}</span>
+        <span class="badge ok">Udført${escapeHtml(doneText)}</span>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="week-row">
+      <span class="week-label">Uge ${week.week_number}</span>
+      <button class="btn gold week-done-btn" type="button" data-week-id="${escapeHtml(week.id)}" ${week.id ? "" : "disabled"}>
+        Marker uge ${week.week_number} som udført
+      </button>
+    </div>
+  `;
+}
+
 function renderAssignment(assignment) {
   const task = assignment.tasks || {};
-  const isDone = assignment.status === "done";
+  const weeks = normalizeWeeks(assignment.assignment_weeks || []);
+  const isDone = allWeeksDone(weeks);
   const card = document.createElement("article");
   card.className = `item-card ${isDone ? "done" : ""}`;
 
@@ -56,27 +124,21 @@ function renderAssignment(assignment) {
         <h3>${escapeHtml(task.title || "Opgave")}</h3>
         <p>${escapeHtml(taskDescription(task.description))}</p>
       </div>
-      <span class="badge ${isDone ? "ok" : ""}">${isDone ? "Udført" : "Mangler"}</span>
+      <span class="badge ${isDone ? "ok" : ""}">${isDone ? "Alle uger udført" : "Mangler uger"}</span>
     </div>
     <div class="actions">
       <span class="badge">Vægt ${Number(task.weight || 1)}</span>
-      <button class="btn gold mark-done" type="button" ${isDone ? "disabled" : ""}>Marker som udført</button>
+    </div>
+    <div class="week-grid">
+      ${weeks.map(renderWeekButton).join("")}
     </div>
   `;
 
-  const button = card.querySelector(".mark-done");
-  button.addEventListener("click", () => markAssignmentDone(assignment.id, button));
+  card.querySelectorAll(".week-done-btn").forEach((button) => {
+    button.addEventListener("click", () => markWeekDone(button.dataset.weekId, button));
+  });
 
   return card;
-}
-
-function escapeHtml(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
 
 async function loadMyAssignments() {
@@ -95,7 +157,7 @@ async function loadMyAssignments() {
 
   const { data, error } = await supabase
     .from("assignments")
-    .select("id, month, status, completed_at, tasks(title, description, weight)")
+    .select("id, month, status, completed_at, tasks(title, description, weight), assignment_weeks(id, week_number, status, completed_at)")
     .eq("month", month)
     .order("created_at", { ascending: true });
 
@@ -111,14 +173,16 @@ async function loadMyAssignments() {
   setStatus(els.dashboardStatus, data?.length ? "" : "Der er ikke fordelt opgaver til dig endnu.");
 }
 
-async function markAssignmentDone(assignmentId, button) {
+async function markWeekDone(weekId, button) {
+  if (!weekId) return;
+
   button.disabled = true;
   button.textContent = "Gemmer...";
 
   const { error } = await supabase
-    .from("assignments")
+    .from("assignment_weeks")
     .update({ status: "done", completed_at: new Date().toISOString() })
-    .eq("id", assignmentId);
+    .eq("id", weekId);
 
   if (error) {
     setStatus(els.dashboardStatus, error.message, "error");
@@ -131,6 +195,8 @@ async function markAssignmentDone(assignmentId, button) {
 }
 
 async function init() {
+  hydrateRememberedLogin(els.username, els.rememberLogin);
+
   if (!isSupabaseConfigured()) {
     els.setupWarning.classList.remove("hidden");
     return;
@@ -151,10 +217,11 @@ els.loginForm.addEventListener("submit", async (event) => {
 
   try {
     await loginWithUsername(els.username.value, els.password.value);
+    handleRememberLogin(els.username.value, els.rememberLogin.checked);
     els.password.value = "";
     setStatus(els.loginStatus, "", "success");
     await loadMyAssignments();
-  } catch (error) {
+  } catch (_error) {
     setStatus(els.loginStatus, "Forkert brugernavn eller adgangskode.", "error");
   }
 });

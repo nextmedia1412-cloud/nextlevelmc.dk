@@ -1,5 +1,11 @@
 import { supabase, isSupabaseConfigured } from "../shared/supabase-client.js";
-import { loginWithUsername, logout, requireAdmin } from "../shared/auth.js";
+import {
+  loginWithUsername,
+  logout,
+  requireAdmin,
+  hydrateRememberedLogin,
+  handleRememberLogin,
+} from "../shared/auth.js";
 
 const els = {
   setupWarning: document.querySelector("#setupWarning"),
@@ -7,6 +13,7 @@ const els = {
   loginForm: document.querySelector("#loginForm"),
   username: document.querySelector("#username"),
   password: document.querySelector("#password"),
+  rememberLogin: document.querySelector("#rememberLogin"),
   loginStatus: document.querySelector("#loginStatus"),
   accessDenied: document.querySelector("#accessDenied"),
   adminPanel: document.querySelector("#adminPanel"),
@@ -43,6 +50,8 @@ const els = {
   distributionStatus: document.querySelector("#distributionStatus"),
 };
 
+let currentAdminId = null;
+
 function getCurrentMonthKey() {
   const now = new Date();
   const year = now.getFullYear();
@@ -73,6 +82,17 @@ function formatDate(value) {
   });
 }
 
+function formatDateTime(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleString("da-DK", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function showLoggedOut() {
   els.loginPanel.classList.remove("hidden");
   els.adminPanel.classList.add("hidden");
@@ -88,6 +108,7 @@ function showDenied() {
 }
 
 function showAdmin(profile) {
+  currentAdminId = profile.id;
   els.loginPanel.classList.add("hidden");
   els.accessDenied.classList.add("hidden");
   els.adminPanel.classList.remove("hidden");
@@ -111,13 +132,18 @@ async function assertAdminAndRender() {
   return true;
 }
 
+function userStatus(user) {
+  if (user.deleted_at) return `<span class="badge danger">Slettet</span>`;
+  return user.active ? `<span class="badge ok">Ja</span>` : `<span class="badge danger">Nej</span>`;
+}
+
 async function loadUsers() {
   setStatus(els.usersStatus, "Henter brugere...");
   els.usersTable.innerHTML = "";
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, username, display_name, role, active, created_at")
+    .select("id, username, display_name, role, active, created_at, deleted_at")
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -126,20 +152,61 @@ async function loadUsers() {
   }
 
   els.usersTable.innerHTML = (data || [])
-    .map(
-      (user) => `
+    .map((user) => {
+      const isSelf = user.id === currentAdminId;
+      const isDeleted = Boolean(user.deleted_at);
+      return `
         <tr>
           <td>${escapeHtml(user.username)}</td>
           <td>${escapeHtml(user.display_name)}</td>
           <td><span class="badge">${escapeHtml(user.role)}</span></td>
-          <td>${user.active ? "Ja" : "Nej"}</td>
+          <td>${userStatus(user)}</td>
           <td>${formatDate(user.created_at)}</td>
+          <td>
+            <button
+              class="btn danger mini delete-user-btn"
+              type="button"
+              data-user-id="${escapeHtml(user.id)}"
+              data-username="${escapeHtml(user.username)}"
+              ${isSelf || isDeleted ? "disabled" : ""}
+            >
+              ${isSelf ? "Dig" : isDeleted ? "Slettet" : "Slet"}
+            </button>
+          </td>
         </tr>
-      `,
-    )
+      `;
+    })
     .join("");
 
+  els.usersTable.querySelectorAll(".delete-user-btn").forEach((button) => {
+    button.addEventListener("click", () => deleteUser(button.dataset.userId, button.dataset.username));
+  });
+
   setStatus(els.usersStatus, data?.length ? "" : "Ingen brugere fundet.");
+}
+
+async function deleteUser(userId, username) {
+  if (!userId) return;
+
+  const confirmed = window.confirm(
+    `Slet bruger '${username}'?\n\nBrugeren bliver deaktiveret og kan ikke længere bruge systemet. Historiske opgaver bevares.`
+  );
+
+  if (!confirmed) return;
+
+  setStatus(els.usersStatus, `Sletter ${username}...`);
+
+  const { data, error } = await supabase.functions.invoke("delete-member", {
+    body: { user_id: userId },
+  });
+
+  if (error) {
+    setStatus(els.usersStatus, error.message, "error");
+    return;
+  }
+
+  setStatus(els.usersStatus, data?.message || "Bruger slettet.", "success");
+  await loadUsers();
 }
 
 async function loadTasks() {
@@ -173,10 +240,33 @@ async function loadTasks() {
   setStatus(els.tasksStatus, data?.length ? "" : "Ingen opgaver fundet.");
 }
 
+function normalizeWeeks(weeks = []) {
+  const byNumber = new Map((weeks || []).map((week) => [Number(week.week_number), week]));
+
+  return [1, 2, 3, 4].map((weekNumber) => {
+    return byNumber.get(weekNumber) || {
+      week_number: weekNumber,
+      status: "pending",
+      completed_at: null,
+    };
+  });
+}
+
+function renderWeekBadges(weeks = []) {
+  return normalizeWeeks(weeks)
+    .map((week) => {
+      const isDone = week.status === "done";
+      const title = week.completed_at ? ` title="${escapeHtml(formatDateTime(week.completed_at))}"` : "";
+      return `<span class="badge ${isDone ? "ok" : "danger"}"${title}>U${week.week_number}: ${isDone ? "OK" : "Mangler"}</span>`;
+    })
+    .join("");
+}
+
 function renderDistributionCard(assignment) {
   const task = assignment.tasks || {};
   const profile = assignment.profiles || {};
-  const isDone = assignment.status === "done";
+  const weeks = normalizeWeeks(assignment.assignment_weeks || []);
+  const isDone = weeks.every((week) => week.status === "done");
   const card = document.createElement("article");
   card.className = `item-card ${isDone ? "done" : ""}`;
   card.innerHTML = `
@@ -185,11 +275,14 @@ function renderDistributionCard(assignment) {
         <h3>${escapeHtml(task.title || "Opgave")}</h3>
         <p>${escapeHtml(task.description || "Ingen beskrivelse.")}</p>
       </div>
-      <span class="badge ${isDone ? "ok" : ""}">${isDone ? "Udført" : "Mangler"}</span>
+      <span class="badge ${isDone ? "ok" : ""}">${isDone ? "Alle uger udført" : "Mangler"}</span>
     </div>
     <div class="actions">
       <span class="badge">${escapeHtml(profile.display_name || profile.username || "Ukendt")}</span>
       <span class="badge">Vægt ${Number(task.weight || 1)}</span>
+    </div>
+    <div class="week-badges">
+      ${renderWeekBadges(weeks)}
     </div>
   `;
   return card;
@@ -203,7 +296,7 @@ async function loadDistribution() {
 
   const { data, error } = await supabase
     .from("assignments")
-    .select("id, month, status, completed_at, profiles(username, display_name), tasks(title, description, weight)")
+    .select("id, month, status, completed_at, profiles(username, display_name), tasks(title, description, weight), assignment_weeks(id, week_number, status, completed_at)")
     .eq("month", month)
     .order("created_at", { ascending: true });
 
@@ -224,6 +317,8 @@ async function refreshAll() {
 }
 
 async function init() {
+  hydrateRememberedLogin(els.username, els.rememberLogin);
+
   if (!isSupabaseConfigured()) {
     els.setupWarning.classList.remove("hidden");
     return;
@@ -239,6 +334,7 @@ els.loginForm.addEventListener("submit", async (event) => {
 
   try {
     await loginWithUsername(els.username.value, els.password.value);
+    handleRememberLogin(els.username.value, els.rememberLogin.checked);
     els.password.value = "";
     setStatus(els.loginStatus, "", "success");
     const ok = await assertAdminAndRender();

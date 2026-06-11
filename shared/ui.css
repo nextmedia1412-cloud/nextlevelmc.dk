@@ -350,3 +350,26 @@ td {
     width: auto;
   }
 }
+
+.btn.danger {
+  color: #fff;
+  background: linear-gradient(180deg, #d44444, #7b1118);
+  box-shadow: 0 12px 30px rgba(212, 68, 68, 0.18);
+}
+
+.btn.mini {
+  min-height: 34px;
+  padding: 0.45rem 0.7rem;
+  border-radius: 10px;
+  font-size: 0.72rem;
+}
+
+.remember-row {
+  justify-content: flex-start;
+}
+
+.week-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
