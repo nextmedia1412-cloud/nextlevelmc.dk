@@ -129,6 +129,13 @@
                 <input id="taskActive" type="checkbox" checked />
                 Aktiv opgave
               </label>
+
+              <details class="exclusion-picker">
+                <summary>Undlad medlemmer fra denne opgave</summary>
+                <p class="small muted">Valgte medlemmer får aldrig denne specifikke opgave ved automatisk fordeling. Brug fx hvis én person altid står for indkøb, men ikke skal rotere ind som hjælper.</p>
+                <div id="taskExcludedUsers" class="member-checklist"></div>
+              </details>
+
               <div class="form-actions">
                 <button id="taskSubmitBtn" class="btn full" type="submit">Tilføj opgave</button>
                 <button id="cancelEditTaskBtn" class="btn secondary hidden" type="button">Annuller redigering</button>
@@ -179,6 +186,7 @@
                   <th>Titel</th>
                   <th>Beskrivelse</th>
                   <th>Vægt</th>
+                  <th>Undladt</th>
                   <th>Aktiv</th>
                   <th>Oprettet</th>
                   <th>Handling</th>

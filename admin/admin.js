@@ -34,6 +34,7 @@ const els = {
   taskDescription: document.querySelector("#taskDescription"),
   taskWeight: document.querySelector("#taskWeight"),
   taskActive: document.querySelector("#taskActive"),
+  taskExcludedUsers: document.querySelector("#taskExcludedUsers"),
   taskSubmitBtn: document.querySelector("#taskSubmitBtn"),
   cancelEditTaskBtn: document.querySelector("#cancelEditTaskBtn"),
   addTaskStatus: document.querySelector("#addTaskStatus"),
@@ -54,6 +55,7 @@ const els = {
 };
 
 let currentAdminId = null;
+let cachedUsers = [];
 let cachedTasks = [];
 
 function getCurrentMonthKey() {
@@ -141,6 +143,62 @@ function userStatus(user) {
   return user.active ? `<span class="badge ok">Ja</span>` : `<span class="badge danger">Nej</span>`;
 }
 
+function getEligibleExclusionUsers() {
+  return cachedUsers.filter((user) => user.active && !user.deleted_at);
+}
+
+function renderTaskExcludedUserChecklist() {
+  if (!els.taskExcludedUsers) return;
+
+  const users = getEligibleExclusionUsers();
+
+  if (!users.length) {
+    els.taskExcludedUsers.innerHTML = `<p class="small muted">Ingen aktive brugere at undlade.</p>`;
+    return;
+  }
+
+  els.taskExcludedUsers.innerHTML = users
+    .map((user) => `
+      <label class="checkbox-row">
+        <input class="task-excluded-user" type="checkbox" value="${escapeHtml(user.id)}" />
+        ${escapeHtml(user.display_name || user.username)} <span class="muted">@${escapeHtml(user.username)}</span>
+      </label>
+    `)
+    .join("");
+}
+
+function getSelectedExcludedUserIds() {
+  if (!els.taskExcludedUsers) return [];
+
+  return [...els.taskExcludedUsers.querySelectorAll(".task-excluded-user:checked")]
+    .map((input) => input.value)
+    .filter(Boolean);
+}
+
+function setSelectedExcludedUserIds(userIds = []) {
+  if (!els.taskExcludedUsers) return;
+
+  const selected = new Set(userIds);
+
+  els.taskExcludedUsers.querySelectorAll(".task-excluded-user").forEach((input) => {
+    input.checked = selected.has(input.value);
+  });
+}
+
+function renderExcludedUsers(exclusions = []) {
+  if (!exclusions.length) return `<span class="muted">Ingen</span>`;
+
+  return `
+    <div class="exclusion-badges">
+      ${exclusions.map((item) => {
+        const profile = item.profiles || {};
+        const label = profile.display_name || profile.username || item.user_id;
+        return `<span class="badge danger">${escapeHtml(label)}</span>`;
+      }).join("")}
+    </div>
+  `;
+}
+
 async function loadUsers() {
   setStatus(els.usersStatus, "Henter brugere...");
   els.usersTable.innerHTML = "";
@@ -155,7 +213,10 @@ async function loadUsers() {
     return;
   }
 
-  els.usersTable.innerHTML = (data || [])
+  cachedUsers = data || [];
+  renderTaskExcludedUserChecklist();
+
+  els.usersTable.innerHTML = cachedUsers
     .map((user) => {
       const isSelf = user.id === currentAdminId;
       const isDeleted = Boolean(user.deleted_at);
@@ -186,7 +247,7 @@ async function loadUsers() {
     button.addEventListener("click", () => deleteUser(button.dataset.userId, button.dataset.username));
   });
 
-  setStatus(els.usersStatus, data?.length ? "" : "Ingen brugere fundet.");
+  setStatus(els.usersStatus, cachedUsers.length ? "" : "Ingen brugere fundet.");
 }
 
 async function deleteUser(userId, username) {
@@ -217,6 +278,7 @@ function resetTaskFormMode() {
   els.editTaskId.value = "";
   els.addTaskForm.reset();
   els.taskActive.checked = true;
+  setSelectedExcludedUserIds([]);
   els.taskSubmitBtn.textContent = "Tilføj opgave";
   els.cancelEditTaskBtn.classList.add("hidden");
 }
@@ -242,7 +304,7 @@ async function loadTasks() {
 
   const { data, error } = await supabase
     .from("tasks")
-    .select("id, title, description, weight, active, created_at")
+    .select("id, title, description, weight, active, created_at, task_excluded_users(user_id, profiles(username, display_name))")
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -260,6 +322,7 @@ async function loadTasks() {
           <td>${escapeHtml(task.title)}</td>
           <td>${escapeHtml(task.description || "-")}</td>
           <td>${Number(task.weight || 1)}</td>
+          <td>${renderExcludedUsers(task.task_excluded_users || [])}</td>
           <td>${activeBadge(isActive)}</td>
           <td>${formatDate(task.created_at)}</td>
           <td>
@@ -312,11 +375,40 @@ function startEditTask(taskId) {
   els.taskDescription.value = task.description || "";
   els.taskWeight.value = String(task.weight || 1);
   els.taskActive.checked = Boolean(task.active);
+  setSelectedExcludedUserIds((task.task_excluded_users || []).map((item) => item.user_id));
   els.taskSubmitBtn.textContent = "Gem ændringer";
   els.cancelEditTaskBtn.classList.remove("hidden");
   setStatus(els.addTaskStatus, `Redigerer: ${task.title}`);
   els.addTaskForm.scrollIntoView({ behavior: "smooth", block: "center" });
   els.taskTitle.focus();
+}
+
+async function saveTaskExclusions(taskId) {
+  const selectedUserIds = getSelectedExcludedUserIds();
+
+  const { error: deleteError } = await supabase
+    .from("task_excluded_users")
+    .delete()
+    .eq("task_id", taskId);
+
+  if (deleteError) {
+    throw new Error(deleteError.message);
+  }
+
+  if (!selectedUserIds.length) return;
+
+  const rows = selectedUserIds.map((userId) => ({
+    task_id: taskId,
+    user_id: userId,
+  }));
+
+  const { error: insertError } = await supabase
+    .from("task_excluded_users")
+    .insert(rows);
+
+  if (insertError) {
+    throw new Error(insertError.message);
+  }
 }
 
 async function saveTask() {
@@ -335,21 +427,36 @@ async function saveTask() {
 
   setStatus(els.addTaskStatus, taskId ? "Gemmer ændringer..." : "Opretter opgave...");
 
-  const request = taskId
-    ? supabase.from("tasks").update(payload).eq("id", taskId)
-    : supabase.from("tasks").insert(payload);
+  try {
+    let savedTaskId = taskId;
 
-  const { error } = await request;
+    if (taskId) {
+      const { error } = await supabase
+        .from("tasks")
+        .update(payload)
+        .eq("id", taskId);
 
-  if (error) {
-    setStatus(els.addTaskStatus, error.message, "error");
-    return;
+      if (error) throw new Error(error.message);
+    } else {
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert(payload)
+        .select("id")
+        .single();
+
+      if (error) throw new Error(error.message);
+      savedTaskId = data.id;
+    }
+
+    await saveTaskExclusions(savedTaskId);
+
+    setStatus(els.addTaskStatus, taskId ? "Opgave opdateret." : "Opgave oprettet.", "success");
+    resetTaskFormMode();
+    await loadTasks();
+    await loadDistribution();
+  } catch (error) {
+    setStatus(els.addTaskStatus, error.message || "Opgaven kunne ikke gemmes.", "error");
   }
-
-  setStatus(els.addTaskStatus, taskId ? "Opgave opdateret." : "Opgave oprettet.", "success");
-  resetTaskFormMode();
-  await loadTasks();
-  await loadDistribution();
 }
 
 async function toggleTaskActive(taskId, nextActive) {
