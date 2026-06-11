@@ -389,3 +389,44 @@ td {
 .table-actions .btn {
   white-space: nowrap;
 }
+
+.exclusion-picker {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.exclusion-picker summary {
+  color: var(--gold-soft);
+  cursor: pointer;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.exclusion-picker p {
+  margin-top: 0.5rem;
+}
+
+.member-checklist {
+  display: grid;
+  gap: 0.45rem;
+  max-height: 230px;
+  margin-top: 0.75rem;
+  overflow: auto;
+}
+
+.member-checklist .checkbox-row {
+  justify-content: flex-start;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.65rem 0.75rem;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.exclusion-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
