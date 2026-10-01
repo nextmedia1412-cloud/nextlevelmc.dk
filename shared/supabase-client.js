@@ -1,15 +1,8 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-const SUPABASE_URL = "https://rcuhxkalpucyceooclve.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_1xrJEOWHFy_mbU-y_AaCDw_X74PV3A_";
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-  },
-});
+// Findes i Supabase under Project Settings → API (Project URL + publishable/anon key).
+const SUPABASE_URL = "https://fsovpbiozmhdxtffrfuu.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_3crHMqzvYNkoaMITjfHiLg_9IJoQYIP";
 
 export function isSupabaseConfigured() {
   return (
@@ -18,3 +11,13 @@ export function isSupabaseConfigured() {
     SUPABASE_URL.startsWith("https://")
   );
 }
+
+export const supabase = isSupabaseConfigured()
+  ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
+    })
+  : null;
