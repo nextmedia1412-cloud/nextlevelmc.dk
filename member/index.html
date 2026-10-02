@@ -9,7 +9,10 @@
 
   <link rel="icon" type="image/png" href="../assets/icons/favicon-48.png" />
   <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
-  <link rel="manifest" href="../manifest.webmanifest" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Next Level MC" />
 
   <link rel="preload" as="image" href="../assets/wall.png" />
@@ -28,7 +31,7 @@
       </a>
       <p class="kicker">Next Level MC</p>
       <h1>Events</h1>
-      <p class="subline">Danmark • 1412</p>
+      <p id="memberGreeting" class="subline">Danmark • 1412</p>
     </header>
 
     <section id="setupWarning" class="links-card member-card hidden">
@@ -91,14 +94,14 @@
       <div id="loginPanel" class="links-card member-card member-card--narrow hidden">
         <div class="section-title">
           <span></span>
-          <p>Admin-login</p>
+          <p>Log ind</p>
           <span></span>
         </div>
 
         <form id="loginForm" class="member-form">
           <label>
-            Email
-            <input id="email" name="email" type="email" autocomplete="username" required />
+            Brugernavn
+            <input id="loginName" name="username" type="text" autocomplete="username" autocapitalize="none" required />
           </label>
           <label>
             Adgangskode
@@ -113,9 +116,63 @@
         </form>
       </div>
 
+      <div id="pushPanel" class="links-card member-card member-card--narrow hidden">
+        <div class="section-title">
+          <span></span>
+          <p>Notifikationer</p>
+          <span></span>
+        </div>
+
+        <div class="member-form">
+          <p id="pushHint" class="member-note"></p>
+          <button id="pushToggleBtn" class="member-btn" type="button">Slå notifikationer til</button>
+          <button id="pushTestBtn" class="member-btn member-btn--ghost hidden" type="button">Send prøve-notifikation</button>
+          <p id="pushStatus" class="member-status"></p>
+        </div>
+      </div>
+
+      <div id="adminPanel" class="links-card member-card hidden">
+        <div class="section-title">
+          <span></span>
+          <p>Admin · Brugere</p>
+          <span></span>
+        </div>
+
+        <div id="userList" class="user-list"></div>
+        <p id="userStatus" class="member-status"></p>
+
+        <form id="userForm" class="member-form user-form">
+          <p class="member-form__heading">Tilføj bruger</p>
+          <div class="member-form__row">
+            <label>
+              Navn
+              <input id="newDisplayName" type="text" maxlength="40" placeholder="fx Malthe" autocomplete="off" required />
+            </label>
+            <label>
+              Brugernavn
+              <input id="newUsername" type="text" maxlength="30" placeholder="fx malthe" autocomplete="off" autocapitalize="none" required />
+            </label>
+          </div>
+          <div class="member-form__row">
+            <label>
+              Adgangskode
+              <input id="newPassword" type="text" minlength="6" placeholder="mindst 6 tegn" autocomplete="off" autocapitalize="none" required />
+            </label>
+            <label>
+              Rettighed
+              <select id="newRole">
+                <option value="member">Medlem</option>
+                <option value="admin">Admin</option>
+              </select>
+            </label>
+          </div>
+          <button id="userSubmitBtn" class="member-btn" type="submit">Tilføj bruger</button>
+        </form>
+      </div>
+
       <nav class="member-nav">
         <a href="../">Forside</a>
-        <button id="showLoginBtn" type="button">Admin</button>
+        <button id="showLoginBtn" type="button">Log ind</button>
         <button id="logoutBtn" class="hidden" type="button">Log ud</button>
       </nav>
     </section>

@@ -196,6 +196,190 @@
   letter-spacing: 0.04em;
 }
 
+.button-stack.is-static .event {
+  animation: none;
+}
+
+.event-chip {
+  width: fit-content;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--orange-light);
+  background: rgba(255,133,0,0.08);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.event-chip.ok {
+  color: #8fe3a8;
+  border-color: rgba(71,177,106,0.5);
+  background: rgba(71,177,106,0.1);
+}
+
+.event-chip.danger {
+  color: #ffb0b0;
+  border-color: rgba(212,68,68,0.5);
+  background: rgba(212,68,68,0.1);
+}
+
+/* ---------- Svar på events ---------- */
+
+.rsvp {
+  display: grid;
+  gap: 10px;
+}
+
+.rsvp-note {
+  color: var(--muted) !important;
+  font-size: 0.9rem;
+}
+
+.rsvp-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.rsvp-btn {
+  padding-inline: 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
+
+.rsvp-btn--yes.is-active {
+  color: #06140a;
+  border-color: transparent;
+  background: linear-gradient(180deg, #8fe3a8, #47b16a);
+  box-shadow: 0 10px 26px rgba(71,177,106,0.28);
+}
+
+.rsvp-btn--no.is-active {
+  color: #fff;
+  border-color: transparent;
+  background: linear-gradient(180deg, #d44444, #8f1f1f);
+  box-shadow: 0 10px 26px rgba(212,68,68,0.24);
+}
+
+.attendees {
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+}
+
+.attendees summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 12px 14px;
+  color: var(--orange-light);
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.attendee-count {
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.attendee-group {
+  display: grid;
+  gap: 3px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.attendee-label {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.attendee-label.ok {
+  color: #8fe3a8;
+}
+
+.attendee-label.danger {
+  color: #ffb0b0;
+}
+
+.attendee-names {
+  color: var(--white);
+  font-size: 0.94rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Admin: brugere ---------- */
+
+.user-list {
+  position: relative;
+  display: grid;
+  gap: 10px;
+}
+
+.user-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  background: rgba(8,8,8,0.5);
+}
+
+.user-info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.user-info strong {
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.user-info span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.user-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.user-form {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.member-form__heading {
+  margin: 0;
+  color: var(--orange-light);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
 /* ---------- Knapper og formularer ---------- */
 
 .member-btn {
@@ -281,8 +465,10 @@
 }
 
 .member-form input,
+.member-form select,
 .member-form textarea {
   width: 100%;
+  min-width: 0;
   padding: 13px 14px;
   border: 1px solid var(--border-soft);
   border-radius: 14px;
@@ -302,6 +488,7 @@
 }
 
 .member-form input:focus,
+.member-form select:focus,
 .member-form textarea:focus {
   border-color: var(--orange);
   box-shadow: 0 0 0 3px rgba(255,133,0,0.18);
