@@ -28,6 +28,7 @@ const els = {
   photosStatus: document.querySelector("#photosStatus"),
   photoGrid: document.querySelector("#photoGrid"),
   backLink: document.querySelector("#backLink"),
+  eventsLink: document.querySelector("#eventsLink"),
 
   lightbox: document.querySelector("#lightbox"),
   lightboxImage: document.querySelector("#lightboxImage"),
@@ -423,6 +424,8 @@ async function init() {
   // Admin logger ind på /member – sessionen deles med galleriet.
   const profile = await getMyProfile();
   isAdmin = profile?.role === "admin";
+  // Events-siden er intern, så linket vises kun for medlemmer, der er logget ind.
+  els.eventsLink.classList.toggle("hidden", !profile);
 
   await route();
 }
