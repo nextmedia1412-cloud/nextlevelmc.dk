@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#050505" />
+  <meta name="description" content="Billeder fra ture, træf og klubliv i Next Level MC Danmark." />
+  <title>Galleri – Next Level MC Danmark</title>
+  <link rel="canonical" href="https://nextlevelmc.dk/galleri/" />
+
+  <link rel="icon" type="image/png" href="../assets/icons/favicon-48.png" />
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
+  <link rel="manifest" href="../manifest.webmanifest" />
+
+  <link rel="preload" as="image" href="../assets/wall.png" />
+  <link rel="stylesheet" href="../style.css" />
+  <link rel="stylesheet" href="../member/member.css" />
+  <link rel="stylesheet" href="./galleri.css" />
+</head>
+<body>
+  <div class="page-bg" aria-hidden="true"></div>
+  <div class="page-vignette" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+
+  <main class="site-shell member-shell">
+    <header class="member-hero">
+      <a class="member-logo" href="../" aria-label="Til forsiden">
+        <img src="../assets/logo.png" alt="Next Level MC Danmark logo" />
+      </a>
+      <p class="kicker">Next Level MC</p>
+      <h1>Galleri</h1>
+      <p class="subline">Danmark • 1412</p>
+    </header>
+
+    <section id="albumsView" class="hidden" aria-label="Albums">
+      <div class="links-card member-card">
+        <div class="section-title">
+          <span></span>
+          <p>Albums</p>
+          <span></span>
+        </div>
+
+        <div id="albumList" class="album-grid"></div>
+        <p id="albumsStatus" class="member-status"></p>
+      </div>
+
+      <div id="albumFormCard" class="links-card member-card member-card--narrow hidden">
+        <div class="section-title">
+          <span></span>
+          <p>Nyt album</p>
+          <span></span>
+        </div>
+
+        <form id="albumForm" class="member-form">
+          <label>
+            Navn
+            <input id="albumTitle" type="text" maxlength="80" placeholder="fx End of Season 2026" required />
+          </label>
+          <label>
+            Dato (valgfri)
+            <input id="albumDate" type="date" />
+          </label>
+          <button id="albumSubmitBtn" class="member-btn" type="submit">Opret album</button>
+          <p id="albumFormStatus" class="member-status"></p>
+        </form>
+      </div>
+    </section>
+
+    <section id="albumView" class="hidden" aria-label="Album">
+      <div class="links-card member-card">
+        <div class="section-title">
+          <span></span>
+          <p id="albumHeading">Album</p>
+          <span></span>
+        </div>
+        <p id="albumMeta" class="album-meta"></p>
+
+        <div id="adminBar" class="admin-bar hidden">
+          <label class="member-btn upload-btn">
+            + Upload billeder
+            <input id="photoInput" type="file" accept="image/*" multiple hidden />
+          </label>
+          <button id="deleteAlbumBtn" class="member-btn member-btn--danger" type="button">Slet album</button>
+        </div>
+
+        <p id="photosStatus" class="member-status"></p>
+        <div id="photoGrid" class="photo-grid"></div>
+      </div>
+    </section>
+
+    <nav class="member-nav">
+      <a href="../">Forside</a>
+      <a id="backLink" class="hidden" href="#">Alle albums</a>
+      <a href="../member/">Events</a>
+    </nav>
+  </main>
+
+  <div id="lightbox" class="lightbox hidden" role="dialog" aria-modal="true" aria-label="Billede">
+    <button id="lightboxClose" class="lightbox-btn lightbox-close" type="button" aria-label="Luk">✕</button>
+    <button id="lightboxPrev" class="lightbox-btn lightbox-prev" type="button" aria-label="Forrige">‹</button>
+    <img id="lightboxImage" alt="" />
+    <button id="lightboxNext" class="lightbox-btn lightbox-next" type="button" aria-label="Næste">›</button>
+    <div class="lightbox-footer">
+      <span id="lightboxCount"></span>
+      <button id="lightboxDelete" class="member-btn member-btn--danger member-btn--small hidden" type="button">Slet billede</button>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <span class="footer-line"></span>
+    <p>Next Level MC • Danmark</p>
+    <span class="footer-line"></span>
+  </footer>
+
+  <script type="module" src="./galleri.js"></script>
+</body>
+</html>
